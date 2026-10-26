@@ -1,6 +1,7 @@
 import cv2
 import dlib
 import time
+from datetime import datetime
 import matplotlib.pyplot as plt
 from scipy.spatial import distance as dist
 
@@ -97,6 +98,9 @@ def main():
     plt.yticks([0, 1], ['Distracted', 'Focused'], fontsize=12)
     plt.grid(True, linestyle='--', alpha=0.5)
     plt.tight_layout()
+    filename = f'dashboard/focus_report_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.png'
+    plt.savefig(filename, dpi=150)
+    print(f'Graph saved to: {filename}')
     plt.show()
 
 if __name__ == "__main__":

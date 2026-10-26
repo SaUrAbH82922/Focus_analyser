@@ -1,0 +1,18 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Temporary documentation HTML
+README_preview.html
+
+# Operating System files
+Thumbs.db
+ehthumbs.db
+.DS_Store
+
+# Virtual environment (if any)
+.venv/
+venv/
+env/
+
