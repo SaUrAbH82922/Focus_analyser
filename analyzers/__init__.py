@@ -9,7 +9,6 @@ from .head_pose_analyzer import HeadPoseAnalyzer
 from .yawn_analyzer import YawnAnalyzer
 from .drowsiness_analyzer import DrowsinessAnalyzer
 from .posture_analyzer import PostureAnalyzer
-from .distraction_detector import DistractionDetector
 
 __all__ = [
     "FaceDetector",
@@ -19,5 +18,4 @@ __all__ = [
     "YawnAnalyzer",
     "DrowsinessAnalyzer",
     "PostureAnalyzer",
-    "DistractionDetector",
 ]

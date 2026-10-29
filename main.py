@@ -27,8 +27,7 @@ from analyzers import (
     HeadPoseAnalyzer,
     YawnAnalyzer,
     DrowsinessAnalyzer,
-    PostureAnalyzer,
-    DistractionDetector
+    PostureAnalyzer
 )
 from engine import (
     AttentionScorer,
@@ -73,7 +72,6 @@ def main():
     yawn_analyzer = YawnAnalyzer()
     drowsiness_analyzer = DrowsinessAnalyzer()
     posture_analyzer = PostureAnalyzer()
-    distraction_detector = DistractionDetector()
 
     # 2. Initialize Engines & Storage
     attention_scorer = AttentionScorer()
@@ -109,6 +107,8 @@ def main():
     print("    [c] - Trigger baseline recalibration")
     print("=" * 70)
 
+    prev_timestamp = 0.0
+
     try:
         while True:
             ret, frame = cap.read()
@@ -117,6 +117,8 @@ def main():
                 break
 
             current_timestamp = time.time() - session_start_time
+            dt = max(0.001, current_timestamp - prev_timestamp)
+            prev_timestamp = current_timestamp
 
             # -------------------------------------------------------------
             # Stage A: Facial & Body Detection
@@ -128,9 +130,14 @@ def main():
             # -------------------------------------------------------------
             # Stage B: Biometric Analyzers
             # -------------------------------------------------------------
+            # Get baseline calibration offsets
+            custom_thresh = baseline_calibrator.get_thresholds()
+            yaw_off = custom_thresh.get("yaw_center_offset", 0.0)
+            pitch_off = custom_thresh.get("pitch_center_offset", 0.0)
+
             eye_res = eye_analyzer.analyze(landmarks)
             gaze_res = gaze_analyzer.analyze(landmarks, frame)
-            head_res = head_pose_analyzer.analyze(landmarks, frame.shape)
+            head_res = head_pose_analyzer.analyze(landmarks, frame.shape, yaw_offset=yaw_off, pitch_offset=pitch_off)
             yawn_res = yawn_analyzer.analyze(landmarks)
             
             drowsy_res = drowsiness_analyzer.analyze(
@@ -146,8 +153,6 @@ def main():
                 face_bbox=face_bbox,
                 frame_shape=frame.shape
             )
-
-            distract_res = distraction_detector.analyze(frame)
 
             # -------------------------------------------------------------
             # Stage C: Baseline Calibration
@@ -171,7 +176,6 @@ def main():
                 head_score=head_res["head_score"],
                 posture_score=posture_res["posture_score"],
                 alertness_score=drowsy_res["alertness_score"],
-                distraction_score=distract_res["distraction_score"],
                 is_drowsy=drowsy_res["is_drowsy"],
                 face_present=face_present
             )
@@ -191,20 +195,17 @@ def main():
                 state=score_data["state"]
             )
 
-            # If user drops focus, log contributing diagnostic reasons
+            # Log contributing diagnostic reasons when user drops focus
             if score_data["state"] in ["DISTRACTED", "DROWSY", "ABSENT"]:
-                distraction_logger.log_event(
-                    timestamp=current_timestamp,
-                    indicators={
-                        "gaze_away": gaze_res["direction"] != "CENTER",
-                        "head_turned": head_res["direction"] != "FORWARD",
-                        "eyes_closed": not eye_res["eyes_open"],
-                        "yawning": yawn_res["is_yawning"],
-                        "slouching": "Slouching" in posture_res["posture_label"],
-                        "object_detected": distract_res["is_distracted"],
-                        "face_absent": not face_present
-                    }
-                )
+                indicators = {
+                    "gaze_away": gaze_res["direction"] != "CENTER",
+                    "head_turned": head_res["direction"] != "FORWARD",
+                    "eyes_closed": not eye_res["eyes_open"],
+                    "yawning": yawn_res["is_yawning"],
+                    "slouching": "Slouching" in posture_res["posture_label"],
+                    "face_absent": not face_present
+                }
+                distraction_logger.log_event(timestamp=current_timestamp, indicators=indicators)
 
             # -------------------------------------------------------------
             # Stage F: HUD Rendering
@@ -226,6 +227,7 @@ def main():
                 "yaw": head_res["yaw"],
                 "pitch": head_res["pitch"],
                 "posture_label": posture_res["posture_label"],
+                "blink_count": eye_analyzer.total_blinks,
                 "is_calibrating": cal_info["active"],
                 "calibration_progress": cal_info["progress"],
                 "landmarks": landmarks
@@ -284,6 +286,8 @@ def main():
     print(f"  • Average Focus Span:      {final_stats['avg_focus_span']:.1f} s")
     print(f"  • Longest Focus Streak:    {final_stats['longest_streak']:.1f} s")
     print(f"  • Distraction Incidents:   {final_stats['distraction_count']}")
+    print(f"  • Blink Count:             {eye_analyzer.total_blinks}")
+    print(f"  • Yawn Count:              {yawn_analyzer.total_yawns}")
     print(f"  • Primary Distractor:      {distraction_summary['primary_distractor']}")
     print("=" * 70)
 

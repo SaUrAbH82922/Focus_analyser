@@ -32,7 +32,9 @@ class BaselineCalibrator:
             "gaze_min": GAZE_CENTER_MIN,
             "gaze_max": GAZE_CENTER_MAX,
             "yaw_threshold": YAW_THRESHOLD,
-            "pitch_threshold": PITCH_THRESHOLD
+            "pitch_threshold": PITCH_THRESHOLD,
+            "yaw_center_offset": 0.0,
+            "pitch_center_offset": 0.0
         }
 
     def update(self, current_time: float, avg_ear: float, gaze_ratio: float, yaw: float, pitch: float):
@@ -85,8 +87,11 @@ class BaselineCalibrator:
 
         if len(self.yaw_samples) >= 15:
             mean_yaw = float(np.mean(self.yaw_samples))
-            # Adjust center yaw offset
             self.thresholds["yaw_center_offset"] = round(mean_yaw, 1)
+
+        if len(self.pitch_samples) >= 15:
+            mean_pitch = float(np.mean(self.pitch_samples))
+            self.thresholds["pitch_center_offset"] = round(mean_pitch, 1)
 
     def get_thresholds(self):
         """Returns the personalized or default thresholds."""

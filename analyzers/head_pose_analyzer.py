@@ -33,9 +33,9 @@ class HeadPoseAnalyzer:
             (150.0, -150.0, -125.0)      # Right mouth corner
         ], dtype=np.float64)
 
-    def analyze(self, landmarks, frame_shape):
+    def analyze(self, landmarks, frame_shape, yaw_offset=0.0, pitch_offset=0.0):
         """
-        Estimates head pose Euler angles.
+        Estimates head pose Euler angles with baseline angle normalization.
         Returns:
             dict containing yaw, pitch, roll, direction classification, and head score.
         """
@@ -91,10 +91,10 @@ class HeadPoseAnalyzer:
         # Convert rotation vector to rotation matrix
         rot_mat, _ = cv2.Rodrigues(rot_vec)
 
-        # Extract Euler angles (pitch, yaw, roll)
+        # Extract Euler angles (pitch, yaw, roll) and normalize by calibrated resting offset
         angles, _, _, _, _, _ = cv2.RQDecomp3x3(rot_mat)
-        pitch = float(angles[0])
-        yaw = float(angles[1])
+        pitch = float(angles[0]) - float(pitch_offset)
+        yaw = float(angles[1]) - float(yaw_offset)
         roll = float(angles[2])
 
         # Classify direction

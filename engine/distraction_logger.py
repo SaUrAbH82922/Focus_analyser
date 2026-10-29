@@ -1,7 +1,7 @@
 """
 Distraction Logger Module ("Why Did I Lose Focus?").
 Maintains an explainable diagnostic log of specific behavioral triggers
-(gaze shift, head turned, prolonged closure, phone detected) responsible for attention drops.
+(gaze shift, head turned, prolonged eye closure, yawning, slouching, face absent).
 """
 
 from collections import Counter
@@ -10,25 +10,29 @@ class DistractionLogger:
     def __init__(self):
         self.events = []
         self.last_logged_time = -10.0
-        self.cooldown_sec = 2.0  # Avoid logging duplicate events every single frame
+        self.cooldown_sec = 1.5  # Log every 1.5s when an active distraction occurs
 
     def log_event(self, timestamp: float, indicators: dict):
         """
-        Records a distraction event if cooldown has elapsed.
+        Records a distraction event.
         indicators: {
             "gaze_away": bool,
             "head_turned": bool,
             "eyes_closed": bool,
             "yawning": bool,
             "slouching": bool,
-            "object_detected": bool,
             "face_absent": bool
         }
         """
         if timestamp - self.last_logged_time < self.cooldown_sec:
             return
 
-        active_reasons = [reason for reason, active in indicators.items() if active]
+        active_reasons = []
+        for reason, active in indicators.items():
+            if active:
+                clean = reason.replace("_", " ").title()
+                active_reasons.append(clean)
+
         if not active_reasons:
             return
 
@@ -44,7 +48,7 @@ class DistractionLogger:
 
     def get_summary(self):
         """
-        Generates aggregate breakdown of the most frequent distraction causes.
+        Generates aggregate breakdown of the most frequent behavioral distraction causes.
         """
         all_reasons = []
         for ev in self.events:

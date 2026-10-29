@@ -112,16 +112,17 @@ class ReportGenerator:
             ("Average Focus Span", f"{avg_span:.1f} seconds"),
             ("Longest Unbroken Streak", f"{longest_streak:.1f} seconds"),
             ("Distraction Incidents", f"{dist_count} events"),
-            ("Blink Count / Yawns", f"{blinks} blinks / {yawns} yawns"),
+            ("Blink Count", f"{blinks} blinks"),
+            ("Yawn Count", f"{yawns} yawns"),
             ("Primary Distractor", top_cause.replace('_', ' ').title()),
         ]
 
-        y_start = 0.77
-        y_step = 0.072
+        y_start = 0.78
+        y_step = 0.065
         for idx, (label, val) in enumerate(metrics):
             y_pos = y_start - (idx * y_step)
-            ax2.text(0.08, y_pos, label, fontsize=9.2, color='#a0a0a0', va='center', ha='left')
-            ax2.text(0.92, y_pos, val, fontsize=9.2, fontweight='bold', color='#ffffff', va='center', ha='right')
+            ax2.text(0.08, y_pos, label, fontsize=9.0, color='#a0a0a0', va='center', ha='left')
+            ax2.text(0.92, y_pos, val, fontsize=9.0, fontweight='bold', color='#ffffff', va='center', ha='right')
             if idx < len(metrics) - 1:
                 ax2.axhline(y_pos - (y_step / 2.0), xmin=0.08, xmax=0.92, color='#333333', linewidth=0.5)
 
@@ -165,13 +166,31 @@ class ReportGenerator:
             spine.set_color('#444444')
             spine.set_linewidth(1.0)
 
-        reason_counts = distraction_summary.get("reason_counts", {})
+        reason_counts = dict(distraction_summary.get("reason_counts", {}))
+
         if reason_counts:
             labels = [k.replace('_', ' ').title() for k in reason_counts.keys()]
             vals = list(reason_counts.values())
             y_pos = np.arange(len(labels))
             
-            bars = ax4.barh(y_pos, vals, color='#e67e22', edgecolor='#d35400', height=0.55)
+            # Distinct colors for behavioral distraction causes
+            bar_colors = []
+            for lbl in labels:
+                ll = lbl.lower()
+                if "eye" in ll or "close" in ll:
+                    bar_colors.append('#e74c3c')   # Red for eye closure
+                elif "head" in ll:
+                    bar_colors.append('#e67e22')   # Amber for head turn
+                elif "gaze" in ll:
+                    bar_colors.append('#f39c12')   # Yellow/amber for gaze
+                elif "yawn" in ll:
+                    bar_colors.append('#9b59b6')   # Purple for yawning
+                elif "slouch" in ll or "posture" in ll:
+                    bar_colors.append('#3498db')   # Cyan/blue for posture
+                else:
+                    bar_colors.append('#1abc9c')   # Teal for other
+
+            bars = ax4.barh(y_pos, vals, color=bar_colors, edgecolor='#181818', height=0.55)
             ax4.set_yticks(y_pos)
             ax4.set_yticklabels(labels, fontsize=9.0, color='#ffffff')
             ax4.set_xlabel("Occurrences Count", fontsize=9.5, color='#cccccc')

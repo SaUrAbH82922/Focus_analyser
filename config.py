@@ -35,8 +35,8 @@ GAZE_CENTER_SCORE = 1.0         # Score for looking at screen
 GAZE_SIDE_SCORE = 0.3           # Score for looking away
 
 # --- Head Pose ---
-YAW_THRESHOLD = 22.0            # Degrees beyond which head is "turned"
-PITCH_THRESHOLD = 18.0          # Degrees beyond which head is "tilted"
+YAW_THRESHOLD = 28.0            # Degrees beyond which head is truly turned away (left/right)
+PITCH_THRESHOLD = 25.0          # Degrees beyond which head is truly tilted away (up/down)
 HEAD_FORWARD_SCORE = 1.0
 HEAD_TURNED_SCORE = 0.2
 
@@ -55,11 +55,6 @@ YAWN_CONSEC_FRAMES = 12         # Frames mouth must be open to count as yawn
 POSTURE_GOOD_ANGLE_MAX = 14.0   # Degrees of shoulder/head tilt for "good" posture
 POSTURE_GOOD_SCORE = 1.0
 POSTURE_BAD_SCORE = 0.35
-
-# --- Distraction Detection ---
-DISTRACTION_OBJECTS = ["cell phone", "phone", "book", "bottle", "cup"]
-DISTRACTION_CONFIDENCE = 0.45   # Min detection confidence
-DISTRACTION_PENALTY = 0.3       # Score multiplier when distraction detected
 
 # --- Attention Scoring Weights ---
 # A = w1*Gaze + w2*Eye + w3*HeadPose + w4*Posture + w5*Alertness

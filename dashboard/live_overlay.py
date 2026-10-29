@@ -1,7 +1,7 @@
 """
 Live Overlay HUD Module.
 Renders real-time computer vision telemetry, attention gauges, streak counters,
-and biometric indicator status directly onto the webcam video feed.
+biometric indicator status, and detected distraction objects directly onto the webcam video feed.
 """
 
 import cv2
@@ -30,15 +30,6 @@ class LiveOverlay:
     def draw(self, frame, data: dict):
         """
         Draws the comprehensive telemetry dashboard over the video frame.
-        data dict requires:
-            attention_score, state, attention_pct,
-            current_streak, longest_streak,
-            focused_time, distracted_time, drowsy_time, distraction_count,
-            gaze_direction, eye_state, avg_ear,
-            head_direction, yaw, pitch,
-            posture_label,
-            is_calibrating, calibration_progress,
-            landmarks (optional)
         """
         if frame is None:
             return frame
@@ -56,10 +47,10 @@ class LiveOverlay:
         else:
             state_color = COLOR_DISTRACTED
 
-        # 1. Subtle colored perimeter border
+        # 1. Perimeter border
         cv2.rectangle(frame, (0, 0), (w - 1, h - 1), state_color, 3)
 
-        # 2. Draw eye landmarks if provided
+        # 4. Draw eye landmarks if provided
         landmarks = data.get("landmarks")
         if landmarks:
             for (x, y) in landmarks[36:48]:  # Eyes
@@ -67,7 +58,7 @@ class LiveOverlay:
             # Nose tip
             cv2.circle(frame, (int(landmarks[30][0]), int(landmarks[30][1])), 3, COLOR_ACCENT, -1)
 
-        # 3. Top-Left: Attention Gauge & State Badge
+        # 5. Top-Left: Attention Gauge & State Badge
         overlay = frame.copy()
         cv2.rectangle(overlay, (10, 10), (250, 85), COLOR_BG, -1)
         cv2.addWeighted(overlay, 0.75, frame, 0.25, 0, frame)
@@ -83,7 +74,7 @@ class LiveOverlay:
         fill_w = int((score_pct / 100.0) * bar_w)
         cv2.rectangle(frame, (bar_x, bar_y), (bar_x + fill_w, bar_y + bar_h), state_color, -1)
 
-        # 4. Top-Right: Focus Streak & Best Streak
+        # 6. Top-Right: Focus Streak & Best Streak
         overlay_r = frame.copy()
         cv2.rectangle(overlay_r, (w - 240, 10), (w - 10, 85), COLOR_BG, -1)
         cv2.addWeighted(overlay_r, 0.75, frame, 0.25, 0, frame)
@@ -96,7 +87,7 @@ class LiveOverlay:
         cv2.putText(frame, f"{streak_str}", (w - 225, 58), self.font, 0.75, COLOR_TEXT, 2)
         cv2.putText(frame, f"Best: {best_str}", (w - 225, 78), self.font, 0.42, (180, 180, 180), 1)
 
-        # 5. Bottom Telemetry Bar (Multi-row stats)
+        # 7. Bottom Telemetry Bar (Multi-row stats)
         bar_height = 80
         overlay_b = frame.copy()
         cv2.rectangle(overlay_b, (0, h - bar_height), (w, h), (20, 20, 20), -1)
@@ -118,11 +109,12 @@ class LiveOverlay:
         ear_val = data.get("avg_ear", 0.0)
         head = data.get("head_direction", "FORWARD")
         posture = data.get("posture_label", "Good")
+        blinks = data.get("blink_count", 0)
 
-        row2_text = f"Gaze: {gaze}  |  Eyes: {eye_st} ({ear_val:.2f})  |  Head: {head}  |  Posture: {posture}"
+        row2_text = f"Gaze: {gaze}  |  Eyes: {eye_st} ({ear_val:.2f})  |  Head: {head}  |  Blinks: {blinks}"
         cv2.putText(frame, row2_text, (15, h - 22), self.font, 0.44, (160, 210, 255), 1)
 
-        # 6. Calibration Banner if active
+        # 8. Calibration Banner if active
         if data.get("is_calibrating", False):
             prog = data.get("calibration_progress", 0)
             cal_overlay = frame.copy()
